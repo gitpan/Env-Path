@@ -46,3 +46,8 @@ Revision history for Perl extension Env::Path.
 
 0.14 Tue Feb  5 20:27:54 EST 2002
 	- Worked around a spurious warning with empty import list.
+
+0.15 Mon Dec  2 18:43:05 EST 2002
+	- Renamed ->Has() to ->Contains(), leaving ->Has() as a
+	  deprecated alias (because Has() sounds too much like
+	  something from UNIVERSAL).

@@ -1,6 +1,6 @@
 package Env::Path;
 
-$VERSION = '0.14';
+$VERSION = '0.16';
 
 require 5.004;
 use strict;
@@ -62,7 +62,7 @@ sub List {
     return split /$dsep/, $$pathref;
 }
 
-sub Has {
+sub Contains {
     my $pathref = _class2ref(shift);
     my $entry = shift;
     my @list = $pathref->List;
@@ -75,6 +75,7 @@ sub Has {
     my %has = map {$_ => 1} @list;
     return $has{$entry};
 }
+*Has = \&Contains;	# backward compatibility
 
 sub Assign {
     my $pathref = _class2ref(shift);
@@ -281,7 +282,7 @@ Env::Path - Advanced operations on path variables
       $libpath = Env::Path->LD_LIBRARY_PATH;
   }
   $libpath->Assign(qw(/usr/lib /usr/openwin/lib));
-  $libpath->Prepend('/usr/ucblib') unless $libpath->Has('/usr/ucblib');
+  $libpath->Prepend('/usr/ucblib') unless $libpath->Contains('/usr/ucblib');
   $libpath->InsertAfter('/usr/ucblib', '/xx/yy/zz');
   $libpath->Uniqify;
   $libpath->DeleteNonexistent;
@@ -343,9 +344,9 @@ object reference. This may be done at 'use' time too:
     use Env::Path qw(PATH CLASSPATH);	# or qw(:all) to bless all EV's
     CLASSPATH->Append('/opt/foo/classes.jar');
 
-The design is intended make use of this module as lightweight as
+The design is intended to make use of this module as lightweight as
 possible.  Rather than creating a new object to manage an environment
-variable, the environment variable is given a set of methods for
+variable, the environment variable is provided a set of methods for
 self-modification but is otherwise left undisturbed and can be used in
 all normal ways.
 
@@ -377,7 +378,7 @@ lists join them together using the value of C<Env::Path-E<gt>PathSeparator>.
 
 Returns the name of the pathvar.
 
-=item * Has
+=item * Contains
 
 Returns true iff the specified entry is present in the pathvar.
 
@@ -487,7 +488,7 @@ UNIX and Windows.
 
 =head1 AUTHOR
 
-David Boyce <dsb@boyski.com>
+David Boyce <dsbperl@cleartool.com>
 
 =head1 COPYRIGHT
 
