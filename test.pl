@@ -26,7 +26,8 @@ $final += printok(1);
 my $p1 = Env::Path->XXXPATH(qw(aaa bbb ccc));
 printok($p1->Name eq 'XXXPATH' && !@XXXPATH::ISA);
 
-my $p2 = Env::Path->new('YYYPATH', qw(aaa bbb ccc xxx yyy zzz));
+my $p2 = Env::Path->new('YYYPATH', qw(aaa bbb ccc xxx yyy zzz c123));
+$p2->Replace('^c.*', qw(/CC /XX));
 printok($p2->Name eq 'YYYPATH');
 
 $p1->Append($p2->List);

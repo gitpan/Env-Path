@@ -1,6 +1,6 @@
 package Env::Path;
 
-$VERSION = '0.07';
+$VERSION = '0.09';
 
 require 5.004;
 use strict;
@@ -146,6 +146,21 @@ sub Remove {
     return $pathref;
 }
 
+sub Replace {
+    my $pathref = _class2ref(shift);
+    return $pathref unless $$pathref;
+    my $re = shift;
+    my @temp = split /$dsep/, $$pathref;
+    for (@temp) {
+	$_ ||= '.';
+	if (/$re/) {
+	    $_ = join($dsep, map {split ','} @_);
+	}
+    }
+    $$pathref = join($dsep, @temp);
+    return $pathref;
+}
+
 sub DeleteNonexistent {
     my $pathref = _class2ref(shift);
     my $temp = $$pathref || '';
@@ -187,6 +202,16 @@ sub Whence {
     return @found;
 }
 
+sub Shell {
+    my $pathref = _class2ref(shift);
+    my $name = $pathref->Name;
+    my $winshell = MSWIN && !$ENV{SHELL};
+    my $str = "set " if $winshell;
+    $str .= qq($name="$$pathref");
+    $str .= "; export $name" if !$winshell;
+    return $str;
+}
+
 # Nothing to do here, just avoiding interaction with AUTOLOAD.
 sub DESTROY { }
 
@@ -214,6 +239,9 @@ Env::Path - Advanced operations on path variables
 
   # one-shot use
   Env::Path->PATH->Append('/usr/sbin');
+
+  # change instances of /usr/local/bin to an architecture-specific dir
+  Env::Path->PATH->Replace('/usr/local/bin', "/usr/local/$ENV{PLATFORM}/bin");
 
   # more complex use (different names for same semantics)
   my $libpath;
@@ -248,23 +276,23 @@ Of course, core Perl constructs such
 
   $ENV{PATH} .= ":/usr/local/bin";
 
-will suffice for most uses; Env::Path is for the others. Cases where
+will suffice for most uses. Env::Path is for the others; cases where
 you need to insert or remove interior path entries, strip redundancies,
 operate on a pathvar without having to know whether the current
 platform uses ":" or ";", operate on a pathvar which may have a
 different name on different platforms, etc.
 
-The OO interface is slightly unusual in that the environment variable
-is itself the object, and the constructor is Env::Path->AUTOLOAD(); thus
+This OO interface is slightly unusual in that the environment variable
+is itself the object and the constructor is Env::Path->AUTOLOAD(); thus
 
-    Env::Path->XXXPATH;
+    Env::Path->MANPATH;
 
-blesses $ENV{XXXPATH} into its package. C<$ENV{XXXPATH}> is otherwise
-unmodified (except for possible autovivification). The only attribute
-this object has is the path value - and it had that to start with.
+would bless $ENV{MANPATH} into its package. C<$ENV{MANPATH}> is
+otherwise unmodified with the exception of possible autovivification.
+The only attribute the new object has is its pre-existing value.
 
 Also, while the object reference may be assigned and used in the normal
-style:
+style
 
     my $path = Env::Path->CLASSPATH;
     $path->Append('/opt/foo/classes.jar');
@@ -275,7 +303,7 @@ a shorthand is also available:
     CLASSPATH->Append('/opt/foo/classes.jar');
 
 I.e. the name of the path variable may be used as a proxy for its
-object reference. This may be done upon reading in the module too:
+object reference. This may be done at 'use' time too:
 
     use Env::Path qw(PATH CLASSPATH);	# or qw(:all) to bless all EV's
     CLASSPATH->Append('/opt/foo/classes.jar');
@@ -310,11 +338,12 @@ Returns the name of the pathvar.
 
 =item * Has
 
-Returns true iff the specified entry is currently present in the path.
+Returns true iff the specified entry is present in the pathvar.
 
 =item * Assign
 
-Takes a list and sets the pathvar to that value.
+Takes a list and sets the pathvar to that value, separated by the
+current PathSeparator.
 
 =item * List
 
@@ -323,7 +352,8 @@ Returns the current path in list format.
 =item * Prepend
 
 For each entry in the supplied list, removes it from the pathvar if
-present. Then prepends all supplied entries to the pathvar.
+present and prepends it, thus ensuring that it's present exactly once
+and at the front.
 
 =item * Append
 
@@ -344,6 +374,11 @@ Analogous to I<InsertBefore>
 
 Removes the specified entries from the path.
 
+=item * Replace
+
+Takes a /pattern/ and a list. Traverses the path and replaces all
+entries which match the pattern with the concatenated list entries.
+
 =item * DeleteNonexistent
 
 Removes from the path all entries which do not exist as filesystem
@@ -357,6 +392,11 @@ Removes redundant entries (the 2nd through nth instances of each entry).
 
 Takes a pattern and returns an ordered list of all filenames found
 along the path which match it and are executable.
+
+=item * Shell
+
+Returns a string suitable for passing to a shell which would set and export
+the pathvar to its current value within the shell context.
 
 =back
 

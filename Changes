@@ -25,3 +25,10 @@ Revision history for Perl extension Env::Path.
 	  to bless all EV's at BEGIN time and so on.
 	- Added -Change feature to envpath script.
 	- envpath -S does automatic export
+
+0.08 Tue Dec 12 20:21:43 EST 2000
+	- Added ->Replace method.
+
+0.09 Thu Feb 15 14:20:26 EST 2001
+	- Added Shell method to allow same functionality inline
+	  as "envpath -S".

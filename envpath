@@ -146,11 +146,7 @@ if (%opt) {
     } elsif ($opt{Shell} && @{$opt{Shell}}) {
 	usage(2) if $opt{Whence};
 	for my $pathvar (@Paths) {
-	    my $path = eval "Env::Path->$pathvar";
-	    print "set " if MSWIN && !$ENV{SHELL};
-	    print qq($pathvar="$$path");
-	    print "; export $pathvar" if !MSWIN;
-	    print "\n";
+	    print Env::Path->$pathvar->Shell, "\n";
 	}
 	exit 0;
     } elsif ($opt{Whence}) {
