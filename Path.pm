@@ -1,6 +1,6 @@
 package Env::Path;
 
-$VERSION = '0.04';
+$VERSION = '0.05';
 
 require 5.004;
 use strict;
@@ -252,8 +252,8 @@ is itself the object, and the constructor is Env::Path->AUTOLOAD(); thus
     Env::Path->XXXPATH;
 
 blesses $ENV{XXXPATH} into its package. C<$ENV{XXXPATH}> is otherwise
-unmodified (except for being autovivified if necessary). The only
-attribute the object has is the path value, and that it had already.
+unmodified (except for being autovivified). The only attribute the
+object has is the path value - and it had that to start with.
 
 Also, while the object reference may be assigned and used in the normal
 style:
@@ -273,7 +273,7 @@ object reference.
 
 =over 4
 
-=item * <Constructor>
+=item * <CONSTRUCTOR>
 
 The constructor may have any name; it's assumed to name a I<path
 variable> as defined above. Returns the object reference.
@@ -289,7 +289,7 @@ default I<:> on open platforms and I<;> on monopolistic ones.
 
 Unless otherwise indicated these methods return the object reference,
 allowing method calls to be strung together. All methods which take
-lists join them together using the value of C<Env::Path->PathSeparator>.
+lists join them together using the value of C<Env::Path-E<gt>PathSeparator>.
 
 =over 4
 
@@ -356,7 +356,7 @@ along the path which match it and are executable.
 =item *
 
 No provision is made for path variables which are not also environment
-variables, a situation which is technically possible but very rare.
+variables, a situation which is technically possible but quite rare.
 
 =item *
 
@@ -368,10 +368,10 @@ In Perl terms the test applied is C<-e>, not C<-d>.
 
 =item *
 
-The shorthand notation for pathvar I<FOO> is implemented by defining
+The shorthand notation for pathvar I<FOO> is implemented by hacking
 I<@FOO::ISA>, so there's a slight risk of namespace collision if your
 code also creates packages with all-upper-case names. No packages are
-defined unless the shorthand notation is employed.
+created unless the shorthand notation is employed.
 
 =back
 
