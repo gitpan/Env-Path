@@ -43,3 +43,6 @@ Revision history for Perl extension Env::Path.
 
 0.12 Tue Oct 16 00:28:52 EDT 2001
 	- Added a README.
+
+0.14 Tue Feb  5 20:27:54 EST 2002
+	- Worked around a spurious warning with empty import list.

@@ -3,7 +3,7 @@
 use File::Basename;
 use Getopt::Long;
 
-use constant MSWIN => $^O =~ /MSWin32|Windows_NT/i;
+use constant MSWIN => $^O =~ /MSWin32|Windows_NT/i ? 1 : 0;
 
 sub usage {
     my $msg = shift;

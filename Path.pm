@@ -1,13 +1,15 @@
 package Env::Path;
 
-$VERSION = '0.12';
+$VERSION = '0.14';
 
 require 5.004;
 use strict;
 
-use constant MSWIN => $^O =~ /MSWin32|Windows_NT/i;
+use constant MSWIN => $^O =~ /MSWin32|Windows_NT/i ? 1 : 0;
 
-my $dsep = MSWIN ? ';' : ':';
+use Config;
+
+my $dsep = $Config::Config{path_sep};
 
 sub new {
     my $class = shift;
@@ -21,7 +23,9 @@ sub new {
 
 sub import {
     my $class = shift;
-    my @list = $_[0] =~ /^:all/ ? keys %ENV : @_;
+    return unless @_;
+    my @list = @_;
+    @list = keys %ENV if $list[0] eq ':all';
     for my $pathvar (@list) {
 	$class->new($pathvar);
     }
@@ -465,6 +469,15 @@ The shorthand notation for pathvar I<FOO> is implemented by hacking
 I<@FOO::ISA>, so there's a slight risk of namespace collision if your
 code also creates packages with all-upper-case names. No packages are
 created unless the shorthand notation is employed.
+
+=item *
+
+There's some cute code in the Env module by Gregor N. Purdy for
+splitting pathvars into arrays using ties. I'd love to be able to take
+advantage of that, and it pains me to do the same thing (and not as
+well) here rather than using Env. Unfortunately it's a newish feature
+(5.6.0? 5.005? 5.6.1?) in Env and I don't want Env::Path to be "tied" to the
+very latest Perls.
 
 =back
 

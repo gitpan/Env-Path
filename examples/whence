@@ -4,7 +4,7 @@
 # the paths of all programs whose names match foo*.
 
 use Env::Path qw(:all);
-use constant MSWIN => $^O =~ /MSWin32|Windows_NT/i;
+use constant MSWIN => $^O =~ /MSWin32|Windows_NT/i ? 1 : 0;
 
 for my $name (@ARGV) {
     $name .= '.*' if MSWIN && $name !~ /(?:\.\w+|\*)$/;
