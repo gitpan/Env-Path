@@ -37,3 +37,6 @@ Revision history for Perl extension Env::Path.
 	- Fixed a warning when the path EV is null
 	- Added ListNonexistent method.
 	- Fixed glob bug in ->Whence on Windows by using bsd_glob()
+
+0.11 Thu Sep 20 11:24:41 EDT 2001
+	- Fixed ->Whence on Windows to work with UNC paths.

@@ -1,6 +1,6 @@
 package Env::Path;
 
-$VERSION = '0.10';
+$VERSION = '0.11';
 
 require 5.004;
 use strict;
@@ -207,8 +207,22 @@ sub Whence {
     my(@found, %seen);
     for my $dir (split /$dsep/, $$pathref) {
 	$dir ||= '.';
-	my $glob = join(MSWIN ? '\\' : '/', $dir, $pat);
-	my @matches = MSWIN ? File::Glob::bsd_glob($glob) : glob($glob);
+	my($glob, @matches);
+	# On &^#$ Windows we need to convert paths to use /, then glob
+	# using bsd_glob because it will automatically ignore case,
+	# then convert back to \ iff the original paths preferred it.
+	# Without this some paths, esp UNC paths, get mixed up.
+	if (MSWIN) {
+	    ($glob = "$dir/$pat") =~ s%\\%/%g;
+	    @matches = File::Glob::bsd_glob($glob);
+	    if ($dir eq '.' || $dir =~ m%\\%) {
+		$glob =~ s%/%\\%g;
+		for (@matches) { s%/%\\%g }
+	    }
+	} else {
+	    $glob = "$dir/$pat";
+	    @matches = glob($glob);
+	}
 	push(@found, grep {-f $_ && -x _ && !$seen{$_}++} $glob, @matches);
     }
     return @found;
