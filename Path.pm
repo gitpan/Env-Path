@@ -1,6 +1,6 @@
 package Env::Path;
 
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 require 5.004;
 use strict;

@@ -6,3 +6,7 @@ Revision history for Perl extension Env::Path.
 0.02 Fri Jun 30 13:23:49 EDT 2000
 	- fixed bug in Insert*() methods
 	- added ->Has method.
+
+0.04 Mon Aug 14 13:56:33 EDT 2000
+	- added interface to ->Whence in envpath script
+	- fixed a bug with -L and -S in envpath script

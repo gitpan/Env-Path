@@ -28,11 +28,16 @@ Flags:
    -R TOKEN		Remove specified dir from path
    -S [VAR]		Print specified pathvars in form suitable for `eval`
    -U			Remove redundant entries from path
+   -W file		Like 'whence' ksh builtin - look for 'file' on PATH
 Examples:
     $prog PATH=/tools/\@PLATFORM@/bin,\@PATH@ -- printenv PATH
     $prog CLASSPATH=\@CLASSPATH@,\@JAVA_HOME@/classes printenv CLASSPATH
     $prog -E LD_RUN_PATH -A /usr/openwin/lib -U -- ld ...
     $prog -E LD_RUN_PATH -I /usr/openwin/lib,-\@LD_LIBRARY_PATH@ ld ...
+    $prog -L
+    $prog -E CLASSPATH -L
+    eval `$prog -E LD_RUN_PATH -I /usr/openwin/lib,-\@LD_LIBRARY_PATH@ -S`
+    $prog -W cat
 
 In the above, TOKEN refers to a string which may contain references to
 environment variables in the form \@VAR@. These will be replaced by the
@@ -75,10 +80,11 @@ local $Getopt::Long::ignorecase = 0;  # global override for dumb default
 local $Getopt::Long::order = $REQUIRE_ORDER;
 GetOptions(\%opt, qw(Env=s Append=s@ Prepend=s@ Insert=s@ Remove=s@
 						Nonexistent Uniqify
-						List:s@ Shell:s@));
+						List:s@ Shell:s@ Whence=s));
 GetOptions('help' => \$opt_help, 'verbose' => \$opt_verbose);
 
-usage() if $opt_help || (!@ARGV && !$opt{List} && !$opt{Shell});
+usage() if $opt_help;
+usage() if !@ARGV && !($opt{List} || $opt{Shell} || $opt{Whence});
 
 if (%opt) {
     require Env::Path;
@@ -114,17 +120,23 @@ if (%opt) {
 	}
     }
 
-    if ($opt{List}) {
+    if ($opt{List} && @{$opt{List}}) {
 	for my $pathvar (@Paths) {
 	    my $path = eval "Env::Path->$pathvar";
 	    for ($path->List) { print $_, "\n" }
 	}
 	exit 0;
-    } elsif ($opt{Shell}) {
+    } elsif ($opt{Shell} && @{$opt{Shell}}) {
 	for my $pathvar (@Paths) {
 	    my $path = eval "Env::Path->$pathvar";
 	    print "set " if MSWIN && !$ENV{SHELL};
 	    print "$pathvar=$$path\n";
+	}
+	exit 0;
+    } elsif ($opt{Whence}) {
+	for my $pathvar (@Paths) {
+	    my $path = eval "Env::Path->$pathvar";
+	    for ($path->Whence($opt{Whence})) { print $_, "\n" }
 	}
 	exit 0;
     }
