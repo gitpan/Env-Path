@@ -1,6 +1,6 @@
 package Env::Path;
 
-$VERSION = '0.09';
+$VERSION = '0.10';
 
 require 5.004;
 use strict;
@@ -140,6 +140,7 @@ sub InsertAfter {
 
 sub Remove {
     my $pathref = _class2ref(shift);
+    return $pathref unless $$pathref;
     my %remove = map {$_ => 1} @_;
     $$pathref = join($dsep,
 		grep {!$remove{$_}} map {$_ || '.'} split(/$dsep/, $$pathref));
@@ -161,9 +162,20 @@ sub Replace {
     return $pathref;
 }
 
+sub ListNonexistent {
+    my $pathref = _class2ref(shift);
+    return $pathref unless $$pathref;
+    my @missing = ();
+    for (split /$dsep/, $$pathref) {
+	push(@missing, $_) if $_ && ! -e $_;
+    }
+    return @missing;
+}
+
 sub DeleteNonexistent {
     my $pathref = _class2ref(shift);
-    my $temp = $$pathref || '';
+    return $pathref unless $$pathref;
+    my $temp = $$pathref;
     $$pathref = '';
     for (split /$dsep/, $temp) {
 	$_ ||= '.';
@@ -191,13 +203,13 @@ sub Uniqify {
 
 sub Whence {
     my $pathref = _class2ref(shift);
-    my $patt = shift;
-    my @found;
+    my $pat = shift;
+    my(@found, %seen);
     for my $dir (split /$dsep/, $$pathref) {
 	$dir ||= '.';
-	for (sort glob("$dir/$patt")) {
-	    push(@found, $_) if -f $_ && -x _;
-	}
+	my $glob = join(MSWIN ? '\\' : '/', $dir, $pat);
+	my @matches = MSWIN ? File::Glob::bsd_glob($glob) : glob($glob);
+	push(@found, grep {-f $_ && -x _ && !$seen{$_}++} $glob, @matches);
     }
     return @found;
 }
@@ -379,6 +391,11 @@ Removes the specified entries from the path.
 Takes a /pattern/ and a list. Traverses the path and replaces all
 entries which match the pattern with the concatenated list entries.
 
+=item * ListNonexistent
+
+Returns a list of all entries which do not exist as filesystem
+entities.
+
 =item * DeleteNonexistent
 
 Removes from the path all entries which do not exist as filesystem
@@ -432,11 +449,11 @@ UNIX and Windows.
 
 =head1 AUTHOR
 
-David Boyce <dsb@world.std.com>
+David Boyce <dsb@boyski.com>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2000 David Boyce. All rights reserved.  This Perl
+Copyright (c) 2000-2001 David Boyce. All rights reserved.  This Perl
 program is free software; you may redistribute and/or modify it under
 the same terms as Perl itself.
 

@@ -32,3 +32,8 @@ Revision history for Perl extension Env::Path.
 0.09 Thu Feb 15 14:20:26 EST 2001
 	- Added Shell method to allow same functionality inline
 	  as "envpath -S".
+
+0.10 Thu Sep  6 14:46:30 EDT 2001
+	- Fixed a warning when the path EV is null
+	- Added ListNonexistent method.
+	- Fixed glob bug in ->Whence on Windows by using bsd_glob()
