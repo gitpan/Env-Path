@@ -3,3 +3,6 @@ Revision history for Perl extension Env::Path.
 0.01  Fri Jun  2 13:53:39 2000
 	- original alpha version.
 
+0.02 Fri Jun 30 13:23:49 EDT 2000
+	- fixed bug in Insert*() methods
+	- added ->Has method.

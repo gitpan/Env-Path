@@ -1,6 +1,6 @@
 package Env::Path;
 
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 require 5.004;
 use strict;
@@ -50,6 +50,13 @@ sub List {
     return split /$dsep/, $$pathref;
 }
 
+sub Has {
+    my $pathref = _class2ref(shift);
+    my $entry = shift;
+    my %has = map {$_ => 1} $pathref->List;
+    return $has{$entry};
+}
+
 sub Assign {
     my $pathref = _class2ref(shift);
     $$pathref = join($dsep, @_);
@@ -74,8 +81,8 @@ sub Append {
 
 sub InsertBefore {
     my $pathref = _class2ref(shift);
-    $pathref->Remove(@_);
     my $marker = shift;
+    $pathref->Remove(@_);
     my $insert = join($dsep, @_);
     my $temp = $$pathref || '';
     $$pathref = '';
@@ -96,8 +103,8 @@ sub InsertBefore {
 
 sub InsertAfter {
     my $pathref = _class2ref(shift);
-    $pathref->Remove(@_);
     my $marker = shift;
+    $pathref->Remove(@_);
     my $insert = join($dsep, @_);
     my $temp = $$pathref || '';
     $$pathref = '';
@@ -191,6 +198,9 @@ Env::Path - Advanced operations on path variables
   MANPATH->Append('/opt/samba/man');
   for (MANPATH->List) { print $_, "\n" };
 
+  # one-shot use
+  Env::Path->PATH->Append('/usr/sbin');
+
   # more complex use
   my $libpath;
   if ($^O =~ /aix/) {
@@ -199,7 +209,7 @@ Env::Path - Advanced operations on path variables
       $libpath = Env::Path->LD_LIBRARY_PATH;
   }
   $libpath->Assign(qw(/usr/lib /usr/openwin/lib));
-  $libpath->Prepend('/usr/ucblib');
+  $libpath->Prepend('/usr/ucblib') unless $libpath->Has('/usr/ucblib');
   $libpath->InsertAfter('/usr/ucblib', '/xx/yy/zz');
   $libpath->Uniqify;
   $libpath->DeleteNonexistent;
@@ -279,6 +289,10 @@ lists join them together using the value of C<Env::Path->PathSeparator>.
 =item * Name
 
 Returns the name of the pathvar.
+
+=item * Has
+
+Returns true iff the specified entry is currently present in the path.
 
 =item * Assign
 
