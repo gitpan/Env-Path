@@ -10,3 +10,12 @@ Revision history for Perl extension Env::Path.
 0.04 Mon Aug 14 13:56:33 EDT 2000
 	- added interface to ->Whence in envpath script
 	- fixed a bug with -L and -S in envpath script
+
+0.05 Mon Sep 11 13:31:25 EDT 2000
+	- doc fixes only
+
+0.06 Thu Sep 14 13:51:55 EDT 2000
+	- fixed typo in InsertAfter that doubled up the insert
+	- quoting bugfix for "envpath -S" on Windows
+	- envpath allows comma-separated insert list, eg
+	  "envpath -I /usr/sbin,-/tmp,/var/tmp"

@@ -24,7 +24,7 @@ Flags:
    -P TOKEN		Prepend TOKEN to the path variable named 'VAR'
    -I dir,(-|+)TOKEN]	Insert TOKEN before (-) or after (+) 'dir' in VAR
    -L [VAR]		List specified pathvar(s) in one-entry-per-line fmt
-   -N			Remove directory entries which don't exist
+   -N			Remove entries which don't exist
    -R TOKEN		Remove specified dir from path
    -S [VAR]		Print specified pathvars in form suitable for `eval`
    -U			Remove redundant entries from path
@@ -36,16 +36,18 @@ Examples:
     $prog -E LD_RUN_PATH -I /usr/openwin/lib,-\@LD_LIBRARY_PATH@ ld ...
     $prog -L
     $prog -E CLASSPATH -L
-    eval `$prog -E LD_RUN_PATH -I /usr/openwin/lib,-\@LD_LIBRARY_PATH@ -S`
+    eval `$prog -N -U -R /usr/ucb -S`
+    eval `$prog -E LD_RUN_PATH -I /usr/openwin/lib,-/usr/local/lib -S`
     $prog -W cat
 
-In the above, TOKEN refers to a string which may contain references to
-environment variables in the form \@VAR@. These will be replaced by the
-value of the variable, and the commas will be replaced by the
-appropriate path separator (':' or ';') for the current platform.
-See "perldoc $0" and "perldoc Env::Path" for full documentation.
+In the above, TOKEN refers to a string which may optionally contain
+references to environment variables in the form \@VAR@. These will be
+replaced by the value \$VAR, and the commas will be replaced by the
+appropriate path separator (':' or ';') for the current platform.  See
+"perldoc $0" and "perldoc Env::Path" for full documentation.
 EOF
-    exit $rc; }
+    exit $rc;
+}
 
 sub expand {
     my $ev = shift;
@@ -108,7 +110,7 @@ if (%opt) {
     $path->Uniqify if $opt{Uniqify};
 
     for (@{$opt{Insert}}) {
-	if (!m%^(.+),([+-])(.*)%) {
+	if (!m%^(.+?),([+-])(.*)%) {
 	    warn "Warning: $0: malformed -Insert parameter '$_'\n";
 	    next;
 	}
@@ -130,7 +132,7 @@ if (%opt) {
 	for my $pathvar (@Paths) {
 	    my $path = eval "Env::Path->$pathvar";
 	    print "set " if MSWIN && !$ENV{SHELL};
-	    print "$pathvar=$$path\n";
+	    print qq($pathvar="$$path"\n);
 	}
 	exit 0;
     } elsif ($opt{Whence}) {

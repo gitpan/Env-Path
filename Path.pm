@@ -1,6 +1,6 @@
 package Env::Path;
 
-$VERSION = '0.05';
+$VERSION = '0.06';
 
 require 5.004;
 use strict;
@@ -90,7 +90,7 @@ sub InsertBefore {
     my $pathref = _class2ref(shift);
     my $marker = shift;
     $pathref->Remove(@_);
-    my $insert = join($dsep, @_);
+    my $insert = join($dsep, map {split ','} @_);
     my $temp = $$pathref || '';
     $$pathref = '';
     for (split /$dsep/, $temp) {
@@ -112,7 +112,7 @@ sub InsertAfter {
     my $pathref = _class2ref(shift);
     my $marker = shift;
     $pathref->Remove(@_);
-    my $insert = join($dsep, @_);
+    my $insert = join($dsep, map {split ','} @_);
     my $temp = $$pathref || '';
     $$pathref = '';
     for (split /$dsep/, $temp) {
@@ -120,7 +120,6 @@ sub InsertAfter {
 	$$pathref .= $dsep if $$pathref;
 	$$pathref .= $_;
 	if ($marker && $_ eq $marker) {
-	    $$pathref .= join($dsep, '', @_);
 	    $$pathref .= $dsep . $insert;
 	    undef $marker;
 	}
