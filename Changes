@@ -40,3 +40,6 @@ Revision history for Perl extension Env::Path.
 
 0.11 Thu Sep 20 11:24:41 EDT 2001
 	- Fixed ->Whence on Windows to work with UNC paths.
+
+0.12 Tue Oct 16 00:28:52 EDT 2001
+	- Added a README.

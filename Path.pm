@@ -1,6 +1,6 @@
 package Env::Path;
 
-$VERSION = '0.11';
+$VERSION = '0.12';
 
 require 5.004;
 use strict;
@@ -308,14 +308,19 @@ operate on a pathvar without having to know whether the current
 platform uses ":" or ";", operate on a pathvar which may have a
 different name on different platforms, etc.
 
-This OO interface is slightly unusual in that the environment variable
+The OO interface is slightly unusual in that the environment variable
 is itself the object and the constructor is Env::Path->AUTOLOAD(); thus
 
     Env::Path->MANPATH;
 
-would bless $ENV{MANPATH} into its package. C<$ENV{MANPATH}> is
-otherwise unmodified with the exception of possible autovivification.
-The only attribute the new object has is its pre-existing value.
+will bless $ENV{MANPATH} into its package while leaving it otherwise
+unmodified (with the exception of possible autovivification).  Unlike
+most objects, this is a scalar and thus can have only one attribute;
+its value.
+
+In other words, Env::Path simply defines a set of methods a path
+variable may call on itself without changing the variable's value or
+other semantics.
 
 Also, while the object reference may be assigned and used in the normal
 style
@@ -333,6 +338,12 @@ object reference. This may be done at 'use' time too:
 
     use Env::Path qw(PATH CLASSPATH);	# or qw(:all) to bless all EV's
     CLASSPATH->Append('/opt/foo/classes.jar');
+
+The design is intended make use of this module as lightweight as
+possible.  Rather than creating a new object to manage an environment
+variable, the environment variable is given a set of methods for
+self-modification but is otherwise left undisturbed and can be used in
+all normal ways.
 
 =head2 CLASS METHODS
 

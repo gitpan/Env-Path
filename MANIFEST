@@ -1,5 +1,6 @@
 Changes
 MANIFEST
+README
 Makefile.PL
 Path.pm
 envpath
