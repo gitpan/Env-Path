@@ -24,7 +24,7 @@ $loaded = 1;
 $final += printok(1);
 
 my $p1 = Env::Path->XXXPATH(qw(aaa bbb ccc));
-printok($p1->Name eq 'XXXPATH');
+printok($p1->Name eq 'XXXPATH' && !@XXXPATH::ISA);
 
 my $p2 = Env::Path->new('YYYPATH', qw(aaa bbb ccc xxx yyy zzz));
 printok($p2->Name eq 'YYYPATH');
@@ -37,6 +37,7 @@ printok($p1->List eq 0);
 Env::Path->PATH;
 PATH->Uniqify;
 PATH->DeleteNonexistent;
+printok(@PATH::ISA);
 
 Env::Path->ZZZPATH(PATH->List);
 ZZZPATH->Append('/nosuchdir');

@@ -10,17 +10,18 @@ sub usage {
     my $rc = (defined($msg) && !$msg) ? 0 : 2;
     if ($rc) {
 	select STDERR;
-	print $msg if $msg;
+	print $msg if $msg && $msg =~ /^\d+$/;
     }
     my $prog = basename($0, qw(.pl));
     print <<EOF;
-Usage: $prog [VAR=TOKEN,TOKEN,...] ...
-                 [-E VAR [-A TOKEN] [-P TOKEN] [-I dir,-|+TOKEN]] [-N] [-U]
+Usage: $prog [VAR=TOKEN,TOKEN,...] ... [-N] [-U]
+                 [-E VAR [-A TOKEN] [-P TOKEN] [-I dir,-|+TOKEN]] [-C old=new]
                  [--] command ...
        $prog [VAR=TOKEN,TOKEN,...] [-E VAR] -L|-S
 Flags:
    -help		Print this message and exit
    -A TOKEN		Append TOKEN to the path variable named 'VAR'
+   -C olddir=newdir	Change <olddir> to <newdir> within 'VAR'
    -P TOKEN		Prepend TOKEN to the path variable named 'VAR'
    -I dir,(-|+)TOKEN]	Insert TOKEN before (-) or after (+) 'dir' in VAR
    -L [VAR]		List specified pathvar(s) in one-entry-per-line fmt
@@ -36,6 +37,7 @@ Examples:
     $prog -E LD_RUN_PATH -I /usr/openwin/lib,-\@LD_LIBRARY_PATH@ ld ...
     $prog -L
     $prog -E CLASSPATH -L
+    $prog -C /opt/netscape=/usr/local/netscape -L
     eval `$prog -N -U -R /usr/ucb -S`
     eval `$prog -E LD_RUN_PATH -I /usr/openwin/lib,-/usr/local/lib -S`
     $prog -W cat
@@ -43,8 +45,8 @@ Examples:
 In the above, TOKEN refers to a string which may optionally contain
 references to environment variables in the form \@VAR@. These will be
 replaced by the value \$VAR, and the commas will be replaced by the
-appropriate path separator (':' or ';') for the current platform.  See
-"perldoc $0" and "perldoc Env::Path" for full documentation.
+appropriate path separator (':' or ';') for the current platform.
+See "perldoc $prog" and "perldoc Env::Path" for full documentation.
 EOF
     exit $rc;
 }
@@ -56,6 +58,8 @@ sub expand {
     }
     return $ev;
 }
+
+usage() if !@ARGV;
 
 my @Paths;
 
@@ -78,14 +82,18 @@ while (my($var, $where, $str) = ($ARGV[0] =~ m%^(\w+)([=+]+)(.*)%)) {
 
 my %opt;
 my($opt_help, $opt_verbose);
-local $Getopt::Long::ignorecase = 0;  # global override for dumb default
+{
+    local $Getopt::Long::passthrough = 1;
+    GetOptions('help' => \$opt_help, 'verbose' => \$opt_verbose);
+    usage() if $opt_help;
+}
 local $Getopt::Long::order = $REQUIRE_ORDER;
-GetOptions(\%opt, qw(Env=s Append=s@ Prepend=s@ Insert=s@ Remove=s@
-						Nonexistent Uniqify
-						List:s@ Shell:s@ Whence=s));
-GetOptions('help' => \$opt_help, 'verbose' => \$opt_verbose);
+GetOptions(\%opt, qw(Env=s
+			    Append=s@ Change=s@ Prepend=s@ Insert=s@ Remove=s@
+			    Nonexistent Uniqify
+			    List:s@ Shell:s@ Whence=s)
+);
 
-usage() if $opt_help;
 usage() if !@ARGV && !($opt{List} || $opt{Shell} || $opt{Whence});
 
 if (%opt) {
@@ -105,6 +113,12 @@ if (%opt) {
 
     for (@{$opt{Remove}})  { $path->Remove(expand($_)) }
 
+    for (@{$opt{Change}})  {
+	my($old, $new) = split '=', $_, 2;
+	$path->InsertBefore($old, $new);
+	$path->Remove(expand($old))
+    }
+
     $path->DeleteNonexistent if $opt{Nonexistent};
 
     $path->Uniqify if $opt{Uniqify};
@@ -123,16 +137,20 @@ if (%opt) {
     }
 
     if ($opt{List} && @{$opt{List}}) {
+	usage(2) if ($opt{Shell} && @{$opt{Shell}}) || $opt{Whence};
 	for my $pathvar (@Paths) {
 	    my $path = eval "Env::Path->$pathvar";
 	    for ($path->List) { print $_, "\n" }
 	}
 	exit 0;
     } elsif ($opt{Shell} && @{$opt{Shell}}) {
+	usage(2) if $opt{Whence};
 	for my $pathvar (@Paths) {
 	    my $path = eval "Env::Path->$pathvar";
 	    print "set " if MSWIN && !$ENV{SHELL};
-	    print qq($pathvar="$$path"\n);
+	    print qq($pathvar="$$path");
+	    print "; export $pathvar" if !MSWIN;
+	    print "\n";
 	}
 	exit 0;
     } elsif ($opt{Whence}) {
@@ -172,9 +190,9 @@ B<advanced>:
 
 Simple mode presents an alternative, platform-independent syntax for
 specifying paths wherein the path separator is "," and environment
-variables can be represented as @NAME@. For example
+variables can be expanded with @NAME@. For example
 
-    pathmod PATH=@PATH@,/usr/ucb -- printenv PATH
+    envpath PATH=@PATH@,/usr/ucb -- printenv PATH
 
 appends C</usr/ucb> to C<$PATH> and execs I<printenv PATH>. The C<-->
 is optional.
@@ -183,10 +201,10 @@ You can also specify prepending or appending by using C<+=> or C<=+>
 respectively:
 
     # place /usr/ucb at the front
-    pathmod PATH+=/usr/ucb -- printenv PATH
+    envpath PATH+=/usr/ucb -- printenv PATH
 
     # place /usr/ucb at the back
-    pathmod PATH=+/usr/ucb -- printenv PATH
+    envpath PATH=+/usr/ucb -- printenv PATH
 
 Simple mode requires only this script; it does not require Env::Path
 to be installed.
@@ -198,11 +216,17 @@ Env::Path (see), which must be installed. The C<-E> flag selects the
 path variable to operate on and other flags specify operations on it.
 E.g.
 
-    pathmod -E MANPATH -A /tmp -R /usr/share/man -N -U -- man ...
+    envpath -E MANPATH -A /tmp -R /usr/share/man -N -U -- man ...
 
 would take MANPATH, append /tmp to it, remove any references to
 C</usr/share/man>, remove any dirs which don't exist (C<-N>) and
 remove redundant entries (C<-U>) before running I<man>.
+
+The -Whence option allows patterns. Thus
+
+    envpath -W "cat*"
+
+would find all programs on PATH which match cat*.
 
 =head1 CLEARCASE WINKINS
 
@@ -235,7 +259,7 @@ different places on different platforms; C<yacc>, for instance, is in
 You could modify the path on the fly:
 
 $(INCDIR)/foo.h: $(BINDIR)/foomaker
-	PATH=$(BINDIR):$$PATH foomaker ...
+	PATH=$(BINDIR)$(SEP)$$PATH foomaker ...
 
 but this suffers from the same problem: since $(BINDIR) and $PATH are
 expanded literally within the build script they'll suppress winkins.
@@ -244,10 +268,10 @@ Here's a solution using I<envpath>:
 $(INCDIR)/foo.h: $(BINDIR)/foomaker
 	envpath PATH=@BINDIR@,@PATH@ foomaker ...
 
-simply hiding the evaluation of BINDIR and PATH such that I<clearmake>
+This hides the evaluation of BINDIR and PATH such that I<clearmake>
 never sees anything but the literals, thus clearing the field for
 winkins. Of course I<envpath> is capable of doing more than this, but
-this is the reason it was written.
+it's the original reason it was written.
 
 =head1 AUTHOR
 

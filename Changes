@@ -19,3 +19,9 @@ Revision history for Perl extension Env::Path.
 	- quoting bugfix for "envpath -S" on Windows
 	- envpath allows comma-separated insert list, eg
 	  "envpath -I /usr/sbin,-/tmp,/var/tmp"
+
+0.07 Wed Sep 27 22:14:30 EDT 2000
+	- Added import method allowing "use Env::Path qw(:all)"
+	  to bless all EV's at BEGIN time and so on.
+	- Added -Change feature to envpath script.
+	- envpath -S does automatic export

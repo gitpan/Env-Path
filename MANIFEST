@@ -4,3 +4,4 @@ Makefile.PL
 Path.pm
 envpath
 test.pl
+examples/whence.pl

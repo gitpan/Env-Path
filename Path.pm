@@ -1,6 +1,6 @@
 package Env::Path;
 
-$VERSION = '0.06';
+$VERSION = '0.07';
 
 require 5.004;
 use strict;
@@ -9,10 +9,9 @@ use constant MSWIN => $^O =~ /MSWin32|Windows_NT/i;
 
 my $dsep = MSWIN ? ';' : ':';
 
-sub AUTOLOAD {
+sub new {
     my $class = shift;
-    (my $pathvar = $Env::Path::AUTOLOAD) =~ s/.*:://;
-    return if $pathvar eq 'DESTROY';
+    my $pathvar = shift;
     my $pathref = \$ENV{$pathvar};
     bless $pathref, $class;
     $pathref->Assign(@_) if @_;
@@ -20,10 +19,19 @@ sub AUTOLOAD {
     eval "\@$pathvar\::ISA = '$class'";
 }
 
-sub new {
+sub import {
     my $class = shift;
-    my $var = shift;
-    return $class->$var(@_);
+    my @list = $_[0] =~ /^:all/ ? keys %ENV : @_;
+    for my $pathvar (@list) {
+	$class->new($pathvar);
+    }
+}
+
+sub AUTOLOAD {
+    my $class = shift;
+    (my $pathvar = $Env::Path::AUTOLOAD) =~ s/.*:://;
+    return if $pathvar eq 'DESTROY';
+    $class->new($pathvar, @_);
 }
 
 sub _class2ref {
@@ -207,7 +215,7 @@ Env::Path - Advanced operations on path variables
   # one-shot use
   Env::Path->PATH->Append('/usr/sbin');
 
-  # more complex use
+  # more complex use (different names for same semantics)
   my $libpath;
   if ($^O =~ /aix/) {
       $libpath = Env::Path->LIBPATH;
@@ -224,9 +232,10 @@ Env::Path - Advanced operations on path variables
   for ($libpath->List) { print " $_" };
   print "\n";
 
-  Env::Path->PATH;
-  my @places = PATH->Whence('foo*');
-  print "@places\n";
+  # simplest usage: bless all existing EV's as Env::Path objects
+  use Env::Path ':all';
+  my @cats = PATH->Whence('cat*');
+  print "@cats\n";
 
 =head1 DESCRIPTION
 
@@ -251,8 +260,8 @@ is itself the object, and the constructor is Env::Path->AUTOLOAD(); thus
     Env::Path->XXXPATH;
 
 blesses $ENV{XXXPATH} into its package. C<$ENV{XXXPATH}> is otherwise
-unmodified (except for being autovivified). The only attribute the
-object has is the path value - and it had that to start with.
+unmodified (except for possible autovivification). The only attribute
+this object has is the path value - and it had that to start with.
 
 Also, while the object reference may be assigned and used in the normal
 style:
@@ -266,7 +275,10 @@ a shorthand is also available:
     CLASSPATH->Append('/opt/foo/classes.jar');
 
 I.e. the name of the path variable may be used as a proxy for its
-object reference.
+object reference. This may be done upon reading in the module too:
+
+    use Env::Path qw(PATH CLASSPATH);	# or qw(:all) to bless all EV's
+    CLASSPATH->Append('/opt/foo/classes.jar');
 
 =head2 CLASS METHODS
 
@@ -359,11 +371,11 @@ variables, a situation which is technically possible but quite rare.
 
 =item *
 
-Except where necessary, no assumption is made that path entries must be
-directories. This is because pathvars like CLASSPATH may contain
-"virtual dirs" such as zip/jar files. For instance the
-I<DeleteNonexistent> method does not remove entries which are files.
-In Perl terms the test applied is C<-e>, not C<-d>.
+Except where necessary no assumption is made that path entries should
+be directories, because pathvars like CLASSPATH may contain "virtual
+dirs" such as zip/jar files. For instance the I<DeleteNonexistent>
+method does not remove entries which are files.  In Perl terms the test
+applied is C<-e>, not C<-d>.
 
 =item *
 
@@ -373,6 +385,10 @@ code also creates packages with all-upper-case names. No packages are
 created unless the shorthand notation is employed.
 
 =back
+
+=head1 WORKS ON
+
+UNIX and Windows.
 
 =head1 AUTHOR
 
@@ -386,6 +402,6 @@ the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-perl(1), perlobj(1), "perldoc Env::Array"
+perl(1), perlobj(1), Env::Array(3)
 
 =cut
