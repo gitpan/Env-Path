@@ -1,6 +1,6 @@
 package Env::Path;
 
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 require 5.004;
 use strict;
@@ -53,7 +53,14 @@ sub List {
 sub Has {
     my $pathref = _class2ref(shift);
     my $entry = shift;
-    my %has = map {$_ => 1} $pathref->List;
+    my @list = $pathref->List;
+    if (MSWIN) {
+	for ($entry, @list) {
+	    $_ = lc($_);
+	    s%\\%/%g;
+	}
+    }
+    my %has = map {$_ => 1} @list;
     return $has{$entry};
 }
 

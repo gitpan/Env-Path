@@ -193,19 +193,20 @@ remove redundant entries (C<-U>) before running I<man>.
 =head1 CLEARCASE WINKINS
 
 A big part of the motivation for this script was for use with ClearCase
-builds; if you know or care about ClearCase read on. Typically, during
+builds; iff you know or care about ClearCase read on. Typically, during
 builds (and not just with ClearCase), pathvars such as PATH, CLASSPATH,
 and LD_LIBRARY_PATH must be strictly controlled.  One choice is to
 force static values of these into the environment during the build
 process, another is to simply require/expect users to set their paths
-appropriately. Each of these can lead to subtle build errors, however,
-and can make it hard for new users to get up to speed if their
-environment must be just so.
+appropriately. Each of these can lead to subtle build or runtime
+errors, however, and makes it hard for new users to get up to speed
+since their personal environment must be just so.
 
-Another possibility is to use full pathnames for everything. This is
-often the best way to go but can raise problems with ClearCase
-winkins.  For example, say you're generating ascii files of some type
-with a binary executable you just built:
+Another common choice is to use only full pathnames within the
+Makefile, avoiding reliance on search paths at all. This is often the
+best way to go but can suppress ClearCase winkins.  For example, say
+you're generating ascii files of some type with a binary executable you
+just built:
 
 $(INCDIR)/foo.h: $(BINDIR)/foomaker
 	$(BINDIR)/foomaker ...
@@ -213,25 +214,26 @@ $(INCDIR)/foo.h: $(BINDIR)/foomaker
 The problem with this is that $(BINDIR) likely contains a platform part
 such as 'solaris' or 'hpux', which makes it impossible to wink in the
 foo.h file on other platforms even though it's ascii. This same thing
-could come up even with a standard utility that's in different places
-on different platforms.
+could come up even with a standard pre-built utility that's in
+different places on different platforms; C<yacc>, for instance, is in
+/usr/bin on Linux and /usr/ccs/bin on Solaris.
 
 You could modify the path on the fly:
 
 $(INCDIR)/foo.h: $(BINDIR)/foomaker
 	PATH=$(BINDIR):$$PATH foomaker ...
 
-but this suffers from the same problem: since $(BINDIR) and $PATH
-are expanded on the command line they'll suppress winkins. Here's a
-solution using I<envpath>:
+but this suffers from the same problem: since $(BINDIR) and $PATH are
+expanded literally within the build script they'll suppress winkins.
+Here's a solution using I<envpath>:
 
 $(INCDIR)/foo.h: $(BINDIR)/foomaker
 	envpath PATH=@BINDIR@,@PATH@ foomaker ...
 
-all we're doing is delaying the evaluation of BINDIR and PATH such that
-I<clearmake> never sees anything but the literals, thus clearing the
-field for winkins. Of course I<envpath> is capable of doing more than
-this, but the above is the reason it was written.
+simply hiding the evaluation of BINDIR and PATH such that I<clearmake>
+never sees anything but the literals, thus clearing the field for
+winkins. Of course I<envpath> is capable of doing more than this, but
+this is the reason it was written.
 
 =head1 AUTHOR
 
