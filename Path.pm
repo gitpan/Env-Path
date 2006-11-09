@@ -1,6 +1,6 @@
 package Env::Path;
 
-$VERSION = '0.16';
+$VERSION = '0.18';
 
 require 5.004;
 use strict;
@@ -147,8 +147,24 @@ sub Remove {
     my $pathref = _class2ref(shift);
     return $pathref unless $$pathref;
     my %remove = map {$_ => 1} @_;
-    $$pathref = join($dsep,
-		grep {!$remove{$_}} map {$_ || '.'} split(/$dsep/, $$pathref));
+    if (MSWIN) {
+	for (keys %remove) {
+	    (my $lcname = lc($_)) =~ s%\\%/%g;
+	    delete $remove{$_};
+	    $remove{lc($_)} = 1;
+	}
+    }
+    my @entries = map {$_ || '.'} split(/$dsep/, $$pathref);
+    if (MSWIN) {
+	my @left = ();
+	for (@entries) {
+	    (my $lcname = lc($_)) =~ s%\\%/%g;
+	    push(@left, $_) unless $remove{$lcname};
+	}
+	$$pathref = join($dsep, @left);
+    } else {
+	$$pathref = join($dsep, grep {!$remove{$_}} @entries);
+    }
     return $pathref;
 }
 
@@ -212,23 +228,28 @@ sub Whence {
     my(@found, %seen);
     for my $dir (split /$dsep/, $$pathref) {
 	$dir ||= '.';
-	my($glob, @matches);
+	$dir =~ s%[/\\]+$%%;
+	$dir =~ s%([/\\])[/\\]+%$1%;
 	# On &^#$ Windows we need to convert paths to use /, then glob
 	# using bsd_glob because it will automatically ignore case,
 	# then convert back to \ iff the original paths preferred it.
 	# Without this some paths, esp UNC paths, get mixed up.
+	# We also have to deal with PATHEXT.
 	if (MSWIN) {
-	    ($glob = "$dir/$pat") =~ s%\\%/%g;
-	    @matches = File::Glob::bsd_glob($glob);
-	    if ($dir eq '.' || $dir =~ m%\\%) {
-		$glob =~ s%/%\\%g;
-		for (@matches) { s%/%\\%g }
+	    for my $ext ('', split ';', $ENV{PATHEXT}) {
+		(my $glob = "$dir/$pat$ext") =~ s%\\%/%g;
+		my @matches = File::Glob::bsd_glob($glob);
+		if ($dir eq '.' || $dir =~ m%\\%) {
+		    $glob =~ s%/%\\%g;
+		    for (@matches) { s%/%\\%g }
+		}
+		push(@found, grep {-f $_ && !$seen{$_}++} $glob, @matches);
 	    }
 	} else {
-	    $glob = "$dir/$pat";
-	    @matches = glob($glob);
+	    my $glob = "$dir/$pat";
+	    my @matches = glob($glob);
+	    push(@found, grep {-f $_ && -x _ && !$seen{$_}++} $glob, @matches);
 	}
-	push(@found, grep {-f $_ && -x _ && !$seen{$_}++} $glob, @matches);
     }
     return @found;
 }
@@ -488,7 +509,7 @@ UNIX and Windows.
 
 =head1 AUTHOR
 
-David Boyce <dsbperl@cleartool.com>
+David Boyce <dsbperl AT boyski.com>
 
 =head1 COPYRIGHT
 

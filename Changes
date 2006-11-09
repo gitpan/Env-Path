@@ -51,3 +51,10 @@ Revision history for Perl extension Env::Path.
 	- Renamed ->Has() to ->Contains(), leaving ->Has() as a
 	  deprecated alias (because Has() sounds too much like
 	  something from UNIVERSAL).
+
+0.17 Fri Oct 24 11:10:34 EDT 2003
+	- Windows portability work (case issues and /-vs-\ stuff)
+	- Fixed ->Whence on Windows to always look in cwd first (boo!)
+
+0.18 Thu Nov  9 09:19:04 EST 2006
+	- Now looks explicitly at PATHEXT on Windows when testing -x.
