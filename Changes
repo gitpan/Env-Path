@@ -58,3 +58,7 @@ Revision history for Perl extension Env::Path.
 
 0.18 Thu Nov  9 09:19:04 EST 2006
 	- Now looks explicitly at PATHEXT on Windows when testing -x.
+
+0.19 Tue May 14 19:05:20 EDT 2013
+	- Fix for Cygwin as suggested by Brendan Byrd via
+	  https://rt.cpan.org/Ticket/Display.html?id=85120

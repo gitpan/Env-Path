@@ -1,11 +1,11 @@
 package Env::Path;
 
-$VERSION = '0.18';
+$VERSION = '0.19';
 
 require 5.004;
 use strict;
 
-use constant MSWIN => $^O =~ /MSWin32|Windows_NT/i ? 1 : 0;
+use constant MSWIN => $^O =~ /MSWin|Windows_NT/i ? 1 : 0;
 
 use Config;
 
@@ -248,7 +248,11 @@ sub Whence {
 	} else {
 	    my $glob = "$dir/$pat";
 	    my @matches = glob($glob);
-	    push(@found, grep {-f $_ && -x _ && !$seen{$_}++} $glob, @matches);
+	    if ($^O =~ m%cygwin%i) {
+		push(@found, grep {-f $_ && !$seen{$_}++} $glob, @matches);
+	    } else {
+		push(@found, grep {-f $_ && -x _ && !$seen{$_}++} $glob, @matches);
+	    }
 	}
     }
     return @found;
@@ -291,6 +295,11 @@ Env::Path - Advanced operations on path variables
 
   # one-shot use
   Env::Path->PATH->Append('/usr/sbin');
+
+  # Windows-ish example
+  use Env::Path qw(PATH);
+  PATH->Append('C:\\Program Files\\Debugging Tools for Windows');
+  print "$_\n" for (PATH->List);
 
   # change instances of /usr/local/bin to an architecture-specific dir
   Env::Path->PATH->Replace('/usr/local/bin', "/usr/local/$ENV{PLATFORM}/bin");
@@ -519,6 +528,6 @@ the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-perl(1), perlobj(1), Env::Array(3)
+perl(1), perlobj(1), Env::Array(3), Env(3)
 
 =cut
